@@ -195,7 +195,7 @@
                     if (res.status === "exists") {
                         alert("Error: This mobile number is already registered!");
                     } else if (res.status === "success") {
-                        alert("Registration Successful! Please open Google Sheet, change Status from 'Pending' to 'Active' to Login.");
+                        alert("Registration Successful! Your account has been sent for verification. You will be able to log in as soon as the Admin approves your account.");
                         toggleAuthMode();
                     }
                 } else if (action === "login") {
