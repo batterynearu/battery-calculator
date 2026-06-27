@@ -3,313 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battery Business Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Battery Near U - Calculator</title>
+    <style>
+        :root { --primary: #ffc107; --dark: #1e1e1e; --light: #ffffff; --grey: #2a2a2a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--dark); color: var(--light); padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 450px; background: var(--grey); padding: 25px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border-top: 5px solid var(--primary); }
+        h2 { text-align: center; margin-bottom: 20px; color: var(--primary); font-size: 24px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #bbb; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #121212; color: #fff; font-size: 16px; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: var(--dark); font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        button:hover { background: #e0a800; }
+        .link-btn { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary); cursor: pointer; }
+        .page { display: none; }
+        .active-page { display: block; }
+        .loader { display: none; text-align: center; margin: 15px 0; color: var(--primary); font-weight: bold; }
+        .result-box { margin-top: 20px; padding: 15px; background: #121212; border-radius: 8px; border-left: 4px solid var(--primary); display: none; }
+        .result-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 16px; }
+        .result-item span:last-child { font-weight: bold; color: var(--primary); }
+        .logout-btn { background: #dc3545; color: white; margin-top: 20px; }
+        .logout-btn:hover { background: #c82333; }
+    </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+<body>
 
-    <!-- Auto Login Loading Screen -->
-    <div id="loadingContainer" class="hidden text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
-        <p class="text-sm text-gray-400">Verifying session... Please wait...</p>
+<div class="container">
+    <!-- Loader -->
+    <div id="loader" class="loader">⚙️ Processing... Please wait...</div>
+
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="page active-page">
+        <h2>Retailer Login</h2>
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="loginMobile" placeholder="Enter Registered Number">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="Enter Password">
+        </div>
+        <button onclick="handleLogin()">Login</button>
+        <div class="link-btn" onclick="switchPage('registerPage')">New Retailer? Register Here</div>
     </div>
 
-    <div id="authContainer" class="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-700">
-        <h2 id="authTitle" class="text-2xl font-bold text-center mb-1">Retailer Login</h2>
-        <p id="authSubtitle" class="text-xs text-gray-400 text-center mb-6">Enter your details to access the calculator</p>
-
-        <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
-            <div id="nameField" class="hidden">
-                <label class="block text-sm font-medium text-gray-400 mb-1">Your Name:</label>
-                <input type="text" id="regName" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white" placeholder="Enter your full name">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Mobile Number:</label>
-                <input type="number" id="phone" required class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white" placeholder="Enter 10 digit number">
-            </div>
-
-            <div>
-                <label id="passwordLabel" class="block text-sm font-medium text-gray-400 mb-1">Enter Password:</label>
-                <input type="password" id="password" required class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white" placeholder="Enter password">
-            </div>
-
-            <button type="submit" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors mt-2">
-                Login
-            </button>
-        </form>
-
-        <p class="text-sm text-center text-gray-400 mt-4">
-            <span id="toggleQuestion">New user?</span> 
-            <a href="#" onclick="toggleAuthMode()" id="toggleText" class="text-blue-500 hover:underline ml-1">Create Account</a>
-        </p>
+    <!-- REGISTER PAGE -->
+    <div id="registerPage" class="page">
+        <h2>Retailer Registration</h2>
+        <div class="form-group">
+            <label>Full Name / Shop Name</label>
+            <input type="text" id="regName" placeholder="Enter Name">
+        </div>
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="regMobile" placeholder="Enter Mobile Number">
+        </div>
+        <div class="form-group">
+            <label>Set Password</label>
+            <input type="password" id="regPassword" placeholder="Create Password">
+        </div>
+        <button onclick="handleRegister()">Register</button>
+        <div class="link-btn" onclick="switchPage('loginPage')">Already Registered? Login</div>
     </div>
 
-    <div id="calculatorContainer" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-2xl border border-gray-700">
-        <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-            <div>
-                <h2 class="text-2xl font-bold text-emerald-400">Battery Business Calculator</h2>
-                <p class="text-xs text-gray-400">Secure Partner Dashboard - batterynearu.com</p>
-            </div>
-            <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs px-3 py-1.5 rounded-lg border border-red-500/30 transition-colors">
-                Logout
-            </button>
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboardPage" class="page">
+        <h2>Battery Weight Calculator</h2>
+        <div class="form-group">
+            <label>Select Battery Model</label>
+            <select id="batterySelect" onchange="calculateWeight()">
+                <option value="">-- Choose Model --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Quantity (Pcs)</label>
+            <input type="number" id="quantityInput" value="1" min="1" oninput="calculateWeight()">
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="relative">
-                <label class="block text-sm font-medium text-gray-400 mb-1">Search & Select Battery:</label>
-                <input type="text" id="batterySearch" oninput="filterBatteries()" onfocus="filterBatteries()" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white" placeholder="Type model to search..." autocomplete="off">
-                
-                <div id="searchDropdown" class="absolute left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-lg max-h-48 overflow-y-auto hidden z-50 shadow-2xl">
-                    </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Selected Model Weight (Kg):</label>
-                <input type="text" id="batteryWeight" readonly class="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-gray-300 focus:outline-none" placeholder="Automatic weight">
+        <div id="resultBox" class="result-box">
+            <div class="result-item"><span>Single Weight:</span> <span id="singleWeight">0 kg</span></div>
+            <div class="result-item"><span>Total Quantity:</span> <span id="totalQty">0</span></div>
+            <div class="result-item" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                <span>Total Weight:</span> <span id="totalWeight" style="font-size: 20px;">0 kg</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Scrap Rate per Kg (Rs.):</label>
-                <input type="number" id="ratePerKg" value="90" oninput="calculateAll()" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white" placeholder="Enter scrap rate">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Scrap Battery Price (Calculated):</label>
-                <input type="text" id="scrapPrice" readonly class="w-full px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg text-amber-400 font-bold focus:outline-none" placeholder="Weight × Rate">
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-400 mb-1">Dealer Price / New Battery DP (Rs.):</label>
-            <input type="number" id="dealerPrice" oninput="calculateAll()" class="w-full px-4 py-2 bg-gray-700 border border-emerald-500 rounded-lg focus:outline-none text-white text-lg font-semibold" placeholder="Enter Dealer Price (DP)">
-        </div>
-
-        <div class="bg-gradient-to-br from-gray-900 to-emerald-950 text-white p-6 rounded-2xl shadow-xl border border-emerald-500/20">
-            <p class="text-xs uppercase tracking-widest text-emerald-400 font-bold">Final Settlement Cost</p>
-            <div class="flex justify-between items-baseline mt-2">
-                <h3 class="text-xl text-gray-200 font-semibold">Net Landing Price:</h3>
-                <span class="text-4xl font-black text-emerald-400">Rs. <span id="finalLandingPriceDisplay">0.00</span></span>
-            </div>
-            <p class="text-[10px] text-gray-400 mt-2 italic text-right">*Formula: Dealer Price (DP) - Scrap Price</p>
-        </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
+</div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxaXKvpYfbhJB7gqwdXsUOQnignLYxr75CYqvpM4_wAgeaQhgDDsWGGLNmYOekbno6Dw/exec";
+<script>
+    // 🔴 APNA WEB APP URL YAHAN BHI RECHECK KAR LIJIYEGA
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_9b5wKExZ_Y_YgYg7gJ_p3F_mR18V5M2RCH3_YmI/exec"; 
 
-        let batteryDatabase = []; 
-        let isLoginMode = true;
+    // Generate unique Device ID or get existing
+    let deviceId = localStorage.getItem("device_id");
+    if (!deviceId) {
+        deviceId = "DEV-" + Math.random().toString(36).substring(2, 11).toUpperCase();
+        localStorage.setItem("device_id", deviceId);
+    }
 
-        function getDeviceId() {
-            let info = window.navigator.userAgent + window.screen.height + window.screen.width;
-            let hash = 0;
-            for (let i = 0; i < info.length; i++) {
-                hash = (hash << 5) - hash + info.charCodeAt(i);
-                hash |= 0;
-            }
-            return "DEV-" + Math.abs(hash % 100000);
-        }
+    let batteryDatabase = [];
 
-        // 🔄 AUTOMATIC CHECK ON PAGE LOAD
-        document.addEventListener("DOMContentLoaded", function() {
-            const savedMobile = localStorage.getItem("b_mobile");
-            const savedPassword = localStorage.getItem("b_password");
+    // 🔄 APP START: Check if user is already logged in permanently
+    window.onload = function() {
+        const savedMobile = localStorage.getItem("rem_mobile");
+        const savedPassword = localStorage.getItem("rem_password");
 
-            if (savedMobile && savedPassword) {
-                // Hide Auth Form and show Loader
-                document.getElementById('authContainer').classList.add('hidden');
-                document.getElementById('loadingContainer').classList.remove('hidden');
-                
-                // Hit login automatically
-                executeAuthAPI("login", savedMobile, savedPassword, "", true);
-            }
-        });
-
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            const title = document.getElementById('authTitle');
-            const subtitle = document.getElementById('authSubtitle');
-            const nameField = document.getElementById('nameField');
-            const passwordLabel = document.getElementById('passwordLabel');
-            const authBtn = document.getElementById('authBtn');
-            const toggleQuestion = document.getElementById('toggleQuestion');
-            const toggleText = document.getElementById('toggleText');
-
-            if (isLoginMode) {
-                title.innerText = "Retailer Login";
-                subtitle.innerText = "Enter your details to access the calculator";
-                nameField.classList.add('hidden');
-                passwordLabel.innerText = "Enter Password:";
-                authBtn.innerText = "Login";
-                toggleQuestion.innerText = "New user?";
-                toggleText.innerText = "Create Account";
-            } else {
-                title.innerText = "Create Account";
-                subtitle.innerText = "Register your mobile number to get access";
-                nameField.classList.remove('hidden');
-                passwordLabel.innerText = "Create Password:";
-                authBtn.innerText = "Register";
-                toggleQuestion.innerText = "Already registered?";
-                toggleText.innerText = "Login Now";
-            }
-        }
-
-        function handleAuth(e) {
-            e.preventDefault();
-            const mobile = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const name = document.getElementById('regName').value;
-            const authBtn = document.getElementById('authBtn');
-
-            if (mobile.length < 10) {
-                alert("Please enter a valid 10-digit mobile number.");
-                return;
-            }
-
-            const action = isLoginMode ? "login" : "register";
-            
-            authBtn.innerText = "Processing... Please wait...";
-            authBtn.disabled = true;
-
-            executeAuthAPI(action, mobile, password, name, false);
-        }
-
-        // 🌐 COMMON API EXECUTION FUNCTION
-        function executeAuthAPI(action, mobile, password, name, isAutoLogin) {
-            const deviceId = getDeviceId();
-            const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
-            const authBtn = document.getElementById('authBtn');
-
-            window[callbackName] = function(res) {
-                document.body.removeChild(script);
-                delete window[callbackName];
-
-                // Stop loading state
-                document.getElementById('loadingContainer').classList.add('hidden');
-                authBtn.innerText = isLoginMode ? "Login" : "Register";
-                authBtn.disabled = false;
-                
-                if (action === "register") {
-                    if (res.status === "exists") {
-                        alert("Error: This mobile number is already registered!");
-                    } else if (res.status === "success") {
-                        alert("Registration Successful! Please open Google Sheet, change Status from 'Pending' to 'Active' to Login.");
-                        toggleAuthMode();
-                    }
-                } else if (action === "login") {
-                    if (res.status === "success") {
-                        if(!isAutoLogin) {
-                            alert("Login Successful!");
-                        }
-                        
-                        // 💾 SAVE TO LOCALSTORAGE FOR AUTO-LOGIN
-                        localStorage.setItem("b_mobile", mobile);
-                        localStorage.setItem("b_password", password);
-
-                        batteryDatabase = res.batteries || [];
-                        document.getElementById('authContainer').classList.add('hidden');
-                        document.getElementById('calculatorContainer').classList.remove('hidden');
-                        setupSearchOptions(); 
-                    } else {
-                        // If auto-login fails due to status change, clear storage and show login form
-                        localStorage.removeItem("b_mobile");
-                        localStorage.removeItem("b_password");
-                        document.getElementById('authContainer').classList.remove('hidden');
-
-                        if (res.status === "pending") {
-                            alert("Your account is currently pending approval. Please contact the administrator.");
-                        } else if (res.status === "wrong_device") {
-                            alert("Security Error: This account is already registered on another device!");
-                        } else {
-                            if(!isAutoLogin) alert("Invalid Mobile Number or Password! Please try again.");
-                        }
-                    }
+        if (savedMobile && savedPassword) {
+            showLoader(true);
+            // Auto-login hit
+            apiCall({ action: "login", mobile: savedMobile, password: savedPassword, deviceId: deviceId }, function(response) {
+                showLoader(false);
+                if (response.status === "success") {
+                    batteryDatabase = response.batteries || [];
+                    populateDropdown();
+                    switchPage('dashboardPage');
+                } else {
+                    // Agar backend se active state hat gayi ho toh storage clear karein
+                    localStorage.removeItem("rem_mobile");
+                    localStorage.removeItem("rem_password");
+                    alert("Session expired or account deactivated. Please login again.");
                 }
-            };
-
-            const script = document.createElement('script');
-            script.src = `${SCRIPT_URL}?action=${action}&mobile=${mobile}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(name)}&deviceId=${deviceId}&callback=${callbackName}`;
-            document.body.appendChild(script);
-        }
-
-        // 🧹 LOGOUT LOGIC
-        function handleLogout() {
-            if (confirm("Are you sure you want to Logout?")) {
-                localStorage.removeItem("b_mobile");
-                localStorage.removeItem("b_password");
-                location.reload();
-            }
-        }
-
-        // --- ADVANCED SEARCH & FILTER LOGIC ---
-        function setupSearchOptions() {
-            const dropdown = document.getElementById('searchDropdown');
-            dropdown.innerHTML = "";
-            batteryDatabase.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "px-4 py-2 hover:bg-emerald-600 cursor-pointer text-sm border-b border-gray-600/50 transition-colors";
-                
-                div.innerText = item.model; 
-                
-                div.onclick = function() {
-                    document.getElementById('batterySearch').value = item.model;
-                    document.getElementById('batteryWeight').value = item.weight; 
-                    dropdown.classList.add('hidden');
-                    calculateAll();
-                };
-                dropdown.appendChild(div);
             });
         }
+    };
 
-        function filterBatteries() {
-            const input = document.getElementById('batterySearch').value.toLowerCase();
-            const dropdown = document.getElementById('searchDropdown');
-            const items = dropdown.getElementsByTagName('div');
-            
-            dropdown.classList.remove('hidden');
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(pageId).classList.add('active-page');
+    }
 
-            if(!input) {
-                setupSearchOptions();
-                return;
-            }
+    function showLoader(show) {
+        document.getElementById("loader").style.display = show ? "block" : "none";
+    }
 
-            let hasResults = false;
-            for (let i = 0; i < items.length; i++) {
-                let txtValue = items[i].textContent || items[i].innerText;
-                if (txtValue.toLowerCase().indexOf(input) > -1) {
-                    items[i].style.display = "";
-                    hasResults = true;
-                } else {
-                    items[i].style.display = "none";
-                }
-            }
-            if(!hasResults) dropdown.classList.add('hidden');
+    function apiCall(params, callbackName) {
+        const callbackId = "cb_" + Math.random().toString(36).substring(2, 9);
+        window[callbackId] = function(data) {
+            callbackName(data);
+            delete window[callbackId];
+            document.getElementById(callbackId).remove();
+        };
+
+        let url = SCRIPT_URL + "?callback=" + callbackId;
+        for (let key in params) {
+            url += "&" + key + "=" + encodeURIComponent(params[key]);
         }
 
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('searchDropdown');
-            const searchInput = document.getElementById('batterySearch');
-            if (e.target !== dropdown && e.target !== searchInput) {
-                dropdown.classList.add('hidden');
+        const script = document.createElement("script");
+        script.id = callbackId;
+        script.src = url;
+        document.body.appendChild(script);
+    }
+
+    function handleRegister() {
+        const name = document.getElementById("regName").value.trim();
+        const mobile = document.getElementById("regMobile").value.trim();
+        const password = document.getElementById("regPassword").value.trim();
+
+        if(!name || !mobile || !password) { alert("Please fill all details!"); return; }
+
+        showLoader(true);
+        apiCall({ action: "register", name: name, mobile: mobile, password: password, deviceId: deviceId }, function(response) {
+            showLoader(false);
+            if (response.status === "success") {
+                alert("Registration Successful! Please wait for Admin approval (Active status).");
+                switchPage('loginPage');
+            } else if (response.status === "exists") {
+                alert("This mobile number is already registered!");
+            } else {
+                alert("Registration failed. Try again.");
             }
         });
+    }
 
-        // --- BUSINESS CALCULATION LOGIC ---
-        function calculateAll() {
-            const weight = parseFloat(document.getElementById('batteryWeight').value) || 0;
-            const scrapRate = parseFloat(document.getElementById('ratePerKg').value) || 0;
-            const dealerPrice = parseFloat(document.getElementById('dealerPrice').value) || 0;
-            
-            const scrapCalculated = weight * scrapRate;
-            document.getElementById('scrapPrice').value = "Rs. " + scrapCalculated.toFixed(2);
+    function handleLogin() {
+        const mobile = document.getElementById("loginMobile").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
 
-            let finalLandingPrice = dealerPrice - scrapCalculated;
-            if(finalLandingPrice < 0) finalLandingPrice = 0;
+        if(!mobile || !password) { alert("Please enter mobile and password!"); return; }
 
-            document.getElementById('finalLandingPriceDisplay').innerText = finalLandingPrice.toFixed(2);
+        showLoader(true);
+        apiCall({ action: "login", mobile: mobile, password: password, deviceId: deviceId }, function(response) {
+            showLoader(false);
+            if (response.status === "success") {
+                // 💾 LOGIN SUCCESS: Save credentials permanently in phone memory
+                localStorage.setItem("rem_mobile", mobile);
+                localStorage.setItem("rem_password", password);
+
+                batteryDatabase = response.batteries || [];
+                populateDropdown();
+                switchPage('dashboardPage');
+            } else if (response.status === "pending") {
+                alert("Your account is pending approval from Admin!");
+            } else if (response.status === "wrong_device") {
+                alert("This number is registered on another device!");
+            } else {
+                alert("Invalid Mobile Number or Password!");
+            }
+        });
+    }
+
+    function populateDropdown() {
+        const select = document.getElementById("batterySelect");
+        select.innerHTML = '<option value="">-- Choose Model --</option>';
+        batteryDatabase.forEach(b => {
+            let opt = document.createElement("option");
+            opt.value = b.model;
+            opt.textContent = b.model;
+            select.appendChild(opt);
+        });
+    }
+
+    function calculateWeight() {
+        const model = document.getElementById("batterySelect").value;
+        const qty = parseInt(document.getElementById("quantityInput").value) || 1;
+        const resultBox = document.getElementById("resultBox");
+
+        if (!model) { resultBox.style.display = "none"; return; }
+
+        const item = batteryDatabase.find(b => b.model === model);
+        if (item) {
+            const singleW = item.weight;
+            const totalW = singleW * qty;
+
+            document.getElementById("singleWeight").textContent = singleW.toFixed(2) + " kg";
+            document.getElementById("totalQty").textContent = qty;
+            document.getElementById("totalWeight").textContent = totalW.toFixed(2) + " kg";
+            resultBox.style.display = "block";
         }
-    </script>
+    }
+
+    function handleLogout() {
+        if(confirm("Are you sure you want to logout?")) {
+            // 🧹 Clear permanent memory
+            localStorage.removeItem("rem_mobile");
+            localStorage.removeItem("rem_password");
+            window.location.reload();
+        }
+    }
+</script>
 </body>
 </html>
