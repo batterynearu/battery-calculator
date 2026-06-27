@@ -8,6 +8,12 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
 
+    <!-- Auto Login Loading Screen -->
+    <div id="loadingContainer" class="hidden text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
+        <p class="text-sm text-gray-400">Verifying session... Please wait...</p>
+    </div>
+
     <div id="authContainer" class="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-700">
         <h2 id="authTitle" class="text-2xl font-bold text-center mb-1">Retailer Login</h2>
         <p id="authSubtitle" class="text-xs text-gray-400 text-center mb-6">Enter your details to access the calculator</p>
@@ -45,7 +51,7 @@
                 <h2 class="text-2xl font-bold text-emerald-400">Battery Business Calculator</h2>
                 <p class="text-xs text-gray-400">Secure Partner Dashboard - batterynearu.com</p>
             </div>
-            <button onclick="location.reload()" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs px-3 py-1.5 rounded-lg border border-red-500/30 transition-colors">
+            <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs px-3 py-1.5 rounded-lg border border-red-500/30 transition-colors">
                 Logout
             </button>
         </div>
@@ -93,7 +99,6 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxaXKvpYfbhJB7gqwdXsUOQnignLYxr75CYqvpM4_wAgeaQhgDDsWGGLNmYOekbno6Dw/exec";
 
-        // 🟢 AB DATA SHEET SE AUTOMATIC LOAD HOGA (KHALI ARRAY RAKHA HAI)
         let batteryDatabase = []; 
         let isLoginMode = true;
 
@@ -106,6 +111,21 @@
             }
             return "DEV-" + Math.abs(hash % 100000);
         }
+
+        // 🔄 AUTOMATIC CHECK ON PAGE LOAD
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedMobile = localStorage.getItem("b_mobile");
+            const savedPassword = localStorage.getItem("b_password");
+
+            if (savedMobile && savedPassword) {
+                // Hide Auth Form and show Loader
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('loadingContainer').classList.remove('hidden');
+                
+                // Hit login automatically
+                executeAuthAPI("login", savedMobile, savedPassword, "", true);
+            }
+        });
 
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
@@ -148,42 +168,63 @@
                 return;
             }
 
-            const deviceId = getDeviceId();
             const action = isLoginMode ? "login" : "register";
             
             authBtn.innerText = "Processing... Please wait...";
             authBtn.disabled = true;
 
+            executeAuthAPI(action, mobile, password, name, false);
+        }
+
+        // 🌐 COMMON API EXECUTION FUNCTION
+        function executeAuthAPI(action, mobile, password, name, isAutoLogin) {
+            const deviceId = getDeviceId();
             const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
+            const authBtn = document.getElementById('authBtn');
+
             window[callbackName] = function(res) {
-                authBtn.innerText = isLoginMode ? "Login" : "Register";
-                authBtn.disabled = false;
-                
                 document.body.removeChild(script);
                 delete window[callbackName];
 
-                if (!isLoginMode) {
+                // Stop loading state
+                document.getElementById('loadingContainer').classList.add('hidden');
+                authBtn.innerText = isLoginMode ? "Login" : "Register";
+                authBtn.disabled = false;
+                
+                if (action === "register") {
                     if (res.status === "exists") {
                         alert("Error: This mobile number is already registered!");
                     } else if (res.status === "success") {
                         alert("Registration Successful! Please open Google Sheet, change Status from 'Pending' to 'Active' to Login.");
                         toggleAuthMode();
                     }
-                } else {
+                } else if (action === "login") {
                     if (res.status === "success") {
-                        alert("Login Successful!");
-                        // 🟢 YAHAN SHEET SE AAYA HUA REAL DATA DATABASE MEIN CHALA GAYA
-                        batteryDatabase = res.batteries || [];
+                        if(!isAutoLogin) {
+                            alert("Login Successful!");
+                        }
                         
+                        // 💾 SAVE TO LOCALSTORAGE FOR AUTO-LOGIN
+                        localStorage.setItem("b_mobile", mobile);
+                        localStorage.setItem("b_password", password);
+
+                        batteryDatabase = res.batteries || [];
                         document.getElementById('authContainer').classList.add('hidden');
                         document.getElementById('calculatorContainer').classList.remove('hidden');
                         setupSearchOptions(); 
-                    } else if (res.status === "pending") {
-                        alert("Your account is currently pending approval. Please contact the administrator.");
-                    } else if (res.status === "wrong_device") {
-                        alert("Security Error: This account is already registered on another device!");
                     } else {
-                        alert("Invalid Mobile Number or Password! Please try again.");
+                        // If auto-login fails due to status change, clear storage and show login form
+                        localStorage.removeItem("b_mobile");
+                        localStorage.removeItem("b_password");
+                        document.getElementById('authContainer').classList.remove('hidden');
+
+                        if (res.status === "pending") {
+                            alert("Your account is currently pending approval. Please contact the administrator.");
+                        } else if (res.status === "wrong_device") {
+                            alert("Security Error: This account is already registered on another device!");
+                        } else {
+                            if(!isAutoLogin) alert("Invalid Mobile Number or Password! Please try again.");
+                        }
                     }
                 }
             };
@@ -191,6 +232,15 @@
             const script = document.createElement('script');
             script.src = `${SCRIPT_URL}?action=${action}&mobile=${mobile}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(name)}&deviceId=${deviceId}&callback=${callbackName}`;
             document.body.appendChild(script);
+        }
+
+        // 🧹 LOGOUT LOGIC
+        function handleLogout() {
+            if (confirm("Are you sure you want to Logout?")) {
+                localStorage.removeItem("b_mobile");
+                localStorage.removeItem("b_password");
+                location.reload();
+            }
         }
 
         // --- ADVANCED SEARCH & FILTER LOGIC ---
